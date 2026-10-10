@@ -1,0 +1,14 @@
+{
+ "app": "setplan",
+ "v": 1,
+ "meta": {"title": "Testritning Hörnet", "client": "Test AB", "location": "Hörnet Studio", "date": "2026-10-10", "author": "CI", "notes": "Självtest av Mac-appen."},
+ "room": {"pts": [[0,0],[7,0],[7,5],[0,5]], "closed": true, "wall": 0.2},
+ "items": [
+  {"type": "cam", "x": 3.5, "y": 4.4, "rot": 0, "name": "Sony A1", "p": {"focal": 50, "dist": 3}},
+  {"type": "model", "x": 3.5, "y": 1.5, "rot": 180},
+  {"type": "octa", "x": 2, "y": 2.5, "rot": 60, "p": {"head": "Profoto D2", "setting": "f/8"}}
+ ],
+ "dims": [],
+ "extras": [{"q": 2, "t": "Sandsäckar"}],
+ "set": {}
+}

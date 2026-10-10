@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3A44"/><stop offset="1" stop-color="#151C21"/></linearGradient></defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <g transform="translate(512 512) scale(1.0) translate(-512 -512)">
+  <!-- plan sheet -->
+  <rect x="212" y="212" width="600" height="600" rx="40" fill="#F4F6F5"/>
+  <g stroke="#DDE3E0" stroke-width="4">
+    <path d="M272 368H752M272 464H752M272 560H752M272 656H752M368 272V752M464 272V752M560 272V752M656 272V752"/>
+  </g>
+  <rect x="272" y="272" width="480" height="480" fill="none" stroke="#1B2226" stroke-width="22"/>
+  <!-- light beam from a softbox -->
+  <path d="M645 275 L715 345 L623 579 L411 367 Z" fill="#E0951A" fill-opacity=".30"/>
+  <!-- camera field of view -->
+  <path d="M410 620 L498 306 L694 462 Z" fill="#2346B5" fill-opacity=".20" stroke="#2346B5" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M498 306 L694 462" stroke="#2346B5" stroke-width="14" stroke-linecap="round"/>
+  <!-- subject, softbox, camera -->
+  <circle cx="560" cy="430" r="30" fill="#16766A"/>
+  <path d="M640 270 L720 350" stroke="#B36800" stroke-width="26" stroke-linecap="round"/>
+  <rect x="342" y="615" width="80" height="80" rx="12" fill="#2346B5" transform="rotate(38 382 655)"/>
+  </g>
+</svg>

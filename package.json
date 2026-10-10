@@ -1,0 +1,23 @@
+{
+  "name": "setplan",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Setplan – planritningar för foto- och filminspelningar. Mac-app (Tauri) och webbapp för iPhone/iPad.",
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "dev": "node scripts/vendor.mjs && node tests/server.mjs",
+    "test": "node scripts/vendor.mjs && node --test tests/*.test.mjs",
+    "tauri": "tauri",
+    "build:web": "node scripts/vendor.mjs && node scripts/build-web.mjs",
+    "build:mac": "node scripts/vendor.mjs && tauri build --target universal-apple-darwin"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "5.2.5",
+    "@fontsource/ibm-plex-sans": "5.2.5",
+    "@fontsource/ibm-plex-sans-condensed": "5.2.5",
+    "@tauri-apps/cli": "2.12.1",
+    "jspdf": "^4.2.1",
+    "playwright-core": "1.56.1"
+  }
+}

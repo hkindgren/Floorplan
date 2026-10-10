@@ -1,0 +1,59 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Setplan",
+  "version": "1.0.0",
+  "identifier": "net.kindgren.setplan",
+  "build": {
+    "frontendDist": "../web"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Setplan",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 960,
+        "minHeight": 600,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "Productivity",
+    "shortDescription": "Planritningar för foto- och filminspelningar",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["setplan"],
+        "name": "Setplan-ritning",
+        "description": "Setplan-ritning",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-setplan+json",
+        "contentTypes": ["net.kindgren.setplan.drawing"],
+        "exportedType": {
+          "identifier": "net.kindgren.setplan.drawing",
+          "conformsTo": ["public.json", "public.data", "public.content"]
+        }
+      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-",
+      "hardenedRuntime": true
+    }
+  }
+}

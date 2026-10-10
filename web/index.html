@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Setplan</title>
+<meta name="description" content="Planritningar för foto- och filminspelningar: kamera, ljus, props och utrustningslista.">
+<meta name="theme-color" content="#F5F6F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A2024" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Setplan">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 L19 5 L22 12 Z" fill="var(--cone-cam)" fill-opacity=".25" stroke="var(--cam)" stroke-width="1.2"/><rect x="2" y="16" width="6" height="6" rx="1" fill="var(--cam)"/></svg>
+      <span>Setplan</span>
+    </div>
+    <input id="titleIn" class="title-in" aria-label="Projektnamn" placeholder="Namnlös ritning">
+    <div class="seg" role="toolbar" aria-label="Verktyg">
+      <button data-tool="select" title="Markera och flytta (V)">Markera <kbd>V</kbd></button>
+      <button data-tool="wall" title="Rita väggar (W)">Rita rum <kbd>W</kbd></button>
+      <button data-tool="measure" title="Måttlinje (M)">Mått <kbd>M</kbd></button>
+      <button data-tool="text" title="Text (T)">Text <kbd>T</kbd></button>
+    </div>
+    <div class="grp">
+      <button id="undoB" class="ib" title="Ångra (Ctrl/Cmd+Z)" aria-label="Ångra">↶</button>
+      <button id="redoB" class="ib" title="Gör om (Shift+Ctrl/Cmd+Z)" aria-label="Gör om">↷</button>
+    </div>
+    <div class="grp">
+      <button id="zoomOut" class="ib" aria-label="Zooma ut">−</button>
+      <button id="fitB" class="ib" title="Visa hela ritningen (F)">Anpassa</button>
+      <button id="zoomIn" class="ib" aria-label="Zooma in">+</button>
+    </div>
+    <div class="grp right">
+      <span id="saveState" class="save-st" role="status" aria-live="polite"></span>
+      <button id="openB" class="btn" title="Öppna en projektfil (Cmd+O)">Öppna</button>
+      <button id="saveB" class="btn" title="Spara projektfilen (Cmd+S)">Spara</button>
+      <button id="newB" class="btn">Ny ritning</button>
+      <button id="pdfB" class="btn primary">Exportera PDF</button>
+    </div>
+  </header>
+
+  <aside class="lib" aria-label="Bibliotek">
+    <input id="libSearch" type="search" placeholder="Sök kamera, ljus, props…" aria-label="Sök i biblioteket">
+    <div id="libList"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <svg id="cv" xmlns="http://www.w3.org/2000/svg" aria-label="Planritning"></svg>
+    <div class="banner" id="banner" hidden>
+      <p>Det här är en exempelritning. Börja med <b>Ny ritning</b> för att rita upp din egen yta.</p>
+      <button class="btn sm primary" id="bannerNew">Ny ritning</button>
+      <button class="x" id="bannerX" aria-label="Stäng">×</button>
+    </div>
+    <div class="hud"><div id="scalebar"></div><div id="coords"></div></div>
+    <div class="hint" id="hint"></div>
+  </main>
+
+  <aside class="side">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="sel">Markerat</button>
+      <button role="tab" data-tab="layers">Lager</button>
+      <button role="tab" data-tab="proj">Projekt</button>
+      <button role="tab" data-tab="list">Lista</button>
+    </nav>
+    <div id="pane"></div>
+  </aside>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <h2 id="dlgT">Ny ritning</h2>
+    <p>Ange måtten så ritas en rektangulär golvyta upp. Sedan kan du dra i hörnen, lägga till hörn eller skriva in exakta väggmått. Vill du ha en annan form börjar du tomt och ritar väggarna själv.</p>
+    <label class="fld"><span>Projektnamn</span><span class="in"><input id="nTitle" placeholder="T.ex. Porträtt, Hörnet"></span></label>
+    <div class="g2">
+      <label class="fld"><span>Bredd</span><span class="in"><input id="nW" inputmode="decimal" value="8,00"><i>m</i></span></label>
+      <label class="fld"><span>Djup</span><span class="in"><input id="nD" inputmode="decimal" value="6,00"><i>m</i></span></label>
+    </div>
+    <div class="acts">
+      <button class="btn" id="nCancel">Avbryt</button>
+      <button class="btn" id="nEmpty">Börja tomt och rita själv</button>
+      <button class="btn primary" id="nRect">Skapa yta</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileIn" hidden>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="js/host.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

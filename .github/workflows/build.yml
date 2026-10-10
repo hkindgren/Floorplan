@@ -1,0 +1,131 @@
+name: Test, build the Mac app and publish the web app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (Chromium, WebKit/Safari engine, real app on Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium webkit
+      - name: Web app in Chromium
+        run: npm test
+      - name: Web app in WebKit (the engine of Safari on iPhone and iPad)
+        run: BROWSER=webkit node --test tests/web.test.mjs
+      - name: Native libraries
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev xvfb
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - name: Rust unit tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Self-test the real app (open, autosave, PDF, PNG)
+        run: |
+          cargo build --manifest-path src-tauri/Cargo.toml
+          JOB=$(mktemp -d); cp tests/fixtures/* "$JOB"/
+          SETPLAN_SELFTEST_DIR="$JOB" SETPLAN_SELFTEST_SECS=30 xvfb-run -a src-tauri/target/debug/setplan 2>&1 | grep -v libEGL | tee app.log
+          node scripts/check-selftest.mjs "$JOB" app.log
+
+  web:
+    name: Publish the web app (iPhone / iPad)
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build:web
+      # The built web app as a download too (can be dropped on any static host, e.g. app.netlify.com/drop)
+      - uses: actions/upload-artifact@v5
+        with: { name: Setplan-web, path: dist, include-hidden-files: true }
+      # GitHub Pages must be switched on once: Settings › Pages › Source: GitHub Actions
+      - id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+      - if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v4
+        with: { path: dist }
+      - id: deploy
+        if: steps.pages.outcome == 'success'
+        uses: actions/deploy-pages@v4
+      - run: |
+          if [ -n "${{ steps.deploy.outputs.page_url }}" ]; then echo "::notice title=Web app::${{ steps.deploy.outputs.page_url }}";
+          else echo "::warning title=Web app not published::Turn on GitHub Pages: Settings › Pages › Source: GitHub Actions"; fi
+
+  mac:
+    name: Build macOS app (Apple Silicon + Intel)
+    needs: test
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: 'aarch64-apple-darwin,x86_64-apple-darwin' }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - run: npm ci
+      - name: Self-test the real app in WKWebView (Safari engine)
+        run: |
+          node scripts/vendor.mjs
+          cargo build --manifest-path src-tauri/Cargo.toml
+          JOB=$(mktemp -d); cp tests/fixtures/* "$JOB"/
+          SETPLAN_SELFTEST_DIR="$JOB" SETPLAN_SELFTEST_SECS=30 src-tauri/target/debug/setplan 2>&1 | tee app.log || true
+          node scripts/check-selftest.mjs "$JOB" app.log
+      - name: Build universal app + dmg
+        run: npm run build:mac
+      - name: Check the bundle
+        run: |
+          APP=$(ls -d src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app)
+          plutil -p "$APP/Contents/Info.plist" | tee info.txt
+          grep -q CFBundleDocumentTypes info.txt
+          grep -q net.kindgren.setplan.drawing info.txt
+          ARCHS=$(lipo -archs "$APP/Contents/MacOS/setplan")
+          echo "::notice title=Bundle::archs: $ARCHS | $(du -sh "$APP" | cut -f1)"
+          codesign --verify --deep --strict "$APP" && echo "::notice title=Codesign::verify ok"
+      - name: Stable file name
+        run: |
+          mkdir -p dist
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg dist/Setplan.dmg
+          echo "VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Setplan-mac
+          path: dist/Setplan.dmg
+          if-no-files-found: error
+      - name: Publish release v${{ env.VERSION }}
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Setplan ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          overwrite_files: true
+          body: |
+            Mac-app (Apple Silicon och Intel). Ladda ned **Setplan.dmg**, öppna den och dra Setplan till Program.
+            Första gången: Systeminställningar › Integritet och säkerhet › Öppna ändå.
+            Byggd från ${{ github.sha }}.
+          files: dist/Setplan.dmg
