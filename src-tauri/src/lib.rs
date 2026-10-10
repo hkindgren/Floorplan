@@ -1,5 +1,5 @@
-// Native side of Setplan: open/save dialogs, reading and writing drawing files, PDF/PNG exports,
-// and opening .setplan files from Finder (double-click, "Open With", drop on the Dock icon).
+// Native side of Floorplan: open/save dialogs, reading and writing drawing files, PDF/PNG exports,
+// and opening .floorplan files from Finder (double-click, "Open With", drop on the Dock icon).
 use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -63,7 +63,7 @@ fn with_ext(path: String, exts: &[String]) -> String {
 
 fn is_drawing(path: &str) -> bool {
     let l = path.to_lowercase();
-    l.ends_with(".setplan") || l.ends_with(".json")
+    l.ends_with(".floorplan") || l.ends_with(".setplan") || l.ends_with(".json")
 }
 
 #[tauri::command]
@@ -78,11 +78,11 @@ fn debug_log(level: String, msg: String) {
     eprintln!("[web {}] {}", level, msg);
 }
 
-/// Debug builds started with SETPLAN_SELFTEST_DIR run a scripted test (used by CI).
+/// Debug builds started with FLOORPLAN_SELFTEST_DIR run a scripted test (used by CI).
 #[tauri::command]
 fn selftest_dir() -> Option<String> {
     if cfg!(debug_assertions) {
-        std::env::var("SETPLAN_SELFTEST_DIR").ok()
+        std::env::var("FLOORPLAN_SELFTEST_DIR").ok()
     } else {
         None
     }
@@ -94,7 +94,7 @@ async fn pick_open_file(app: tauri::AppHandle, title: String) -> Option<String> 
         .dialog()
         .file()
         .set_title(title)
-        .add_filter("Setplan-ritning", &["setplan", "json"])
+        .add_filter("Floorplan-ritning", &["floorplan", "setplan", "json"])
         .blocking_pick_file()?;
     picked.into_path().ok().map(|p| p.to_string_lossy().to_string())
 }
@@ -192,12 +192,12 @@ pub fn run() {
             if !args.is_empty() {
                 app.state::<Pending>().0.lock().unwrap().extend(args);
             }
-            // Debug builds: SETPLAN_SELFTEST_DIR runs the in-app self-test, then quits (CI).
+            // Debug builds: FLOORPLAN_SELFTEST_DIR runs the in-app self-test, then quits (CI).
             #[cfg(debug_assertions)]
-            if std::env::var("SETPLAN_SELFTEST_DIR").is_ok() {
+            if std::env::var("FLOORPLAN_SELFTEST_DIR").is_ok() {
                 let h = app.handle().clone();
                 std::thread::spawn(move || {
-                    let secs = std::env::var("SETPLAN_SELFTEST_SECS").ok().and_then(|s| s.parse().ok()).unwrap_or(30);
+                    let secs = std::env::var("FLOORPLAN_SELFTEST_SECS").ok().and_then(|s| s.parse().ok()).unwrap_or(30);
                     std::thread::sleep(std::time::Duration::from_secs(secs));
                     QUITTING.store(true, Ordering::SeqCst);
                     h.exit(0);
@@ -262,23 +262,24 @@ mod tests {
 
     #[test]
     fn adds_missing_extension() {
-        let e = vec!["setplan".to_string()];
-        assert_eq!(with_ext("/a/Studio".into(), &e), "/a/Studio.setplan");
-        assert_eq!(with_ext("/a/Studio.SETPLAN".into(), &e), "/a/Studio.SETPLAN");
+        let e = vec!["floorplan".to_string()];
+        assert_eq!(with_ext("/a/Studio".into(), &e), "/a/Studio.floorplan");
+        assert_eq!(with_ext("/a/Studio.FLOORPLAN".into(), &e), "/a/Studio.FLOORPLAN");
         assert_eq!(with_ext("/a/x.pdf".into(), &[]), "/a/x.pdf");
     }
 
     #[test]
     fn drawings_only() {
-        assert!(is_drawing("/a/b.setplan"));
+        assert!(is_drawing("/a/b.floorplan"));
         assert!(is_drawing("/a/old.setplan.json"));
+        assert!(is_drawing("/a/older.setplan"));
         assert!(!is_drawing("/a/photo.jpg"));
     }
 
     #[test]
     fn atomic_write() {
-        let dir = std::env::temp_dir().join(format!("setplan-test-{}", std::process::id()));
-        let p = dir.join("sub/plan.setplan");
+        let dir = std::env::temp_dir().join(format!("floorplan-test-{}", std::process::id()));
+        let p = dir.join("sub/plan.floorplan");
         let ps = p.to_string_lossy().to_string();
         write_atomic(&ps, b"{\"a\":1}").unwrap();
         write_atomic(&ps, b"{\"a\":2}").unwrap();

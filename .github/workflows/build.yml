@@ -40,7 +40,7 @@ jobs:
         run: |
           cargo build --manifest-path src-tauri/Cargo.toml
           JOB=$(mktemp -d); cp tests/fixtures/* "$JOB"/
-          SETPLAN_SELFTEST_DIR="$JOB" SETPLAN_SELFTEST_SECS=30 xvfb-run -a src-tauri/target/debug/setplan 2>&1 | grep -v libEGL | tee app.log
+          FLOORPLAN_SELFTEST_DIR="$JOB" FLOORPLAN_SELFTEST_SECS=30 xvfb-run -a src-tauri/target/debug/floorplan 2>&1 | grep -v libEGL | tee app.log
           node scripts/check-selftest.mjs "$JOB" app.log
 
   web:
@@ -59,7 +59,7 @@ jobs:
       - run: npm run build:web
       # The built web app as a download too (can be dropped on any static host, e.g. app.netlify.com/drop)
       - uses: actions/upload-artifact@v5
-        with: { name: Setplan-web, path: dist, include-hidden-files: true }
+        with: { name: Floorplan-web, path: dist, include-hidden-files: true }
       # GitHub Pages must be switched on once: Settings › Pages › Source: GitHub Actions
       - id: pages
         uses: actions/configure-pages@v5
@@ -92,7 +92,7 @@ jobs:
           node scripts/vendor.mjs
           cargo build --manifest-path src-tauri/Cargo.toml
           JOB=$(mktemp -d); cp tests/fixtures/* "$JOB"/
-          SETPLAN_SELFTEST_DIR="$JOB" SETPLAN_SELFTEST_SECS=30 src-tauri/target/debug/setplan 2>&1 | tee app.log || true
+          FLOORPLAN_SELFTEST_DIR="$JOB" FLOORPLAN_SELFTEST_SECS=30 src-tauri/target/debug/floorplan 2>&1 | tee app.log || true
           node scripts/check-selftest.mjs "$JOB" app.log
       - name: Build universal app + dmg
         run: npm run build:mac
@@ -101,31 +101,31 @@ jobs:
           APP=$(ls -d src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app)
           plutil -p "$APP/Contents/Info.plist" | tee info.txt
           grep -q CFBundleDocumentTypes info.txt
-          grep -q net.kindgren.setplan.drawing info.txt
-          ARCHS=$(lipo -archs "$APP/Contents/MacOS/setplan")
+          grep -q net.kindgren.floorplan.drawing info.txt
+          ARCHS=$(lipo -archs "$APP/Contents/MacOS/floorplan")
           echo "::notice title=Bundle::archs: $ARCHS | $(du -sh "$APP" | cut -f1)"
           codesign --verify --deep --strict "$APP" && echo "::notice title=Codesign::verify ok"
       - name: Stable file name
         run: |
           mkdir -p dist
-          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg dist/Setplan.dmg
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg dist/Floorplan.dmg
           echo "VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v5
         with:
-          name: Setplan-mac
-          path: dist/Setplan.dmg
+          name: Floorplan-mac
+          path: dist/Floorplan.dmg
           if-no-files-found: error
       - name: Publish release v${{ env.VERSION }}
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
-          name: Setplan ${{ env.VERSION }}
+          name: Floorplan ${{ env.VERSION }}
           target_commitish: ${{ github.sha }}
           make_latest: true
           overwrite_files: true
           body: |
-            Mac-app (Apple Silicon och Intel). Ladda ned **Setplan.dmg**, öppna den och dra Setplan till Program.
+            Mac-app (Apple Silicon och Intel). Ladda ned **Floorplan.dmg**, öppna den och dra Floorplan till Program.
             Första gången: Systeminställningar › Integritet och säkerhet › Öppna ändå.
             Byggd från ${{ github.sha }}.
-          files: dist/Setplan.dmg
+          files: dist/Floorplan.dmg

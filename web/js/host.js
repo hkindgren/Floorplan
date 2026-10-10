@@ -46,7 +46,7 @@
         return { path, name: baseName(path), text };
       },
       async saveProjectAs(defaultName, text) {
-        const path = await invoke('pick_save_file', { title: 'Spara ritning', defaultName, filterName: 'Setplan-ritning', exts: ['setplan'] });
+        const path = await invoke('pick_save_file', { title: 'Spara ritning', defaultName, filterName: 'Floorplan-ritning', exts: ['floorplan'] });
         if (!path) return null;
         await invoke('write_text', { path, text });
         return { path, name: baseName(path) };
@@ -120,7 +120,7 @@
           el.addEventListener('change', onChange);
           el.addEventListener('cancel', onCancel);
           // iOS greys out files whose type it doesn't know, so no filter there
-          if (ios) el.removeAttribute('accept'); else el.setAttribute('accept', '.setplan,.json,application/json');
+          if (ios) el.removeAttribute('accept'); else el.setAttribute('accept', '.floorplan,.setplan,.json,application/json');
           el.click();
         });
       },

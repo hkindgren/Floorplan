@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Setplan",
-  "version": "1.0.0",
-  "identifier": "net.kindgren.setplan",
+  "productName": "Floorplan",
+  "version": "1.1.0",
+  "identifier": "net.kindgren.floorplan",
   "build": {
     "frontendDist": "../web"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Setplan",
+        "title": "Floorplan",
         "width": 1440,
         "height": 900,
         "minWidth": 960,
@@ -37,15 +37,15 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["setplan"],
-        "name": "Setplan-ritning",
-        "description": "Setplan-ritning",
+        "ext": ["floorplan", "setplan"],
+        "name": "Floorplan-ritning",
+        "description": "Floorplan-ritning",
         "role": "Editor",
         "rank": "Owner",
-        "mimeType": "application/x-setplan+json",
-        "contentTypes": ["net.kindgren.setplan.drawing"],
+        "mimeType": "application/x-floorplan+json",
+        "contentTypes": ["net.kindgren.floorplan.drawing"],
         "exportedType": {
-          "identifier": "net.kindgren.setplan.drawing",
+          "identifier": "net.kindgren.floorplan.drawing",
           "conformsTo": ["public.json", "public.data", "public.content"]
         }
       }

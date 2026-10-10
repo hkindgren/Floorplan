@@ -1,5 +1,5 @@
 {
- "app": "setplan",
+ "app": "floorplan",
  "v": 1,
  "meta": {"title": "Testritning Hörnet", "client": "Test AB", "location": "Hörnet Studio", "date": "2026-10-10", "author": "CI", "notes": "Självtest av Mac-appen."},
  "room": {"pts": [[0,0],[7,0],[7,5],[0,5]], "closed": true, "wall": 0.2},

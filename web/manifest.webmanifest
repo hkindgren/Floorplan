@@ -1,6 +1,6 @@
 {
-  "name": "Setplan",
-  "short_name": "Setplan",
+  "name": "Floorplan",
+  "short_name": "Floorplan",
   "description": "Planritningar för foto- och filminspelningar: kamera, ljus, props och utrustningslista.",
   "lang": "sv",
   "id": "./",

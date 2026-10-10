@@ -10,7 +10,9 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const fmt=(v,dec=2)=>(Math.round(v*10**dec)/10**dec).toFixed(dec).replace('.',',');
 const fm=v=>fmt(v,2)+' m';
 const pnum=v=>{const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isFinite(n)?n:NaN};
-const KEY='setplan-v1',FILEKEY='setplan-file';
+const KEY='floorplan-v1',FILEKEY='floorplan-file';
+// the app used to be called Setplan: carry over a drawing saved under the old name
+try{if(!localStorage.getItem(KEY)&&localStorage.getItem('setplan-v1'))localStorage.setItem(KEY,localStorage.getItem('setplan-v1'))}catch(e){}
 const H=window.Host;
 
 /* ---------- catalog ---------- */
@@ -125,7 +127,7 @@ function mkItem(type,x,y,o={}){
   return it;
 }
 function textSize(it){it.w=Math.max(0.2,String(it.p.text||'').length*it.p.size*0.56);it.d=it.p.size*1.25}
-function blankDoc(title=''){return{app:'setplan',v:1,meta:{title,client:'',location:'',date:new Date().toISOString().slice(0,10),author:'',notes:''},room:{pts:[],closed:false,wall:0.2},layers:DEF_LAYERS(),items:[],dims:[],extras:[],set:{...DEF_SET}}}
+function blankDoc(title=''){return{app:'floorplan',v:1,meta:{title,client:'',location:'',date:new Date().toISOString().slice(0,10),author:'',notes:''},room:{pts:[],closed:false,wall:0.2},layers:DEF_LAYERS(),items:[],dims:[],extras:[],set:{...DEF_SET}}}
 function rectDoc(title,w,d){const D=blankDoc(title);D.room={pts:[[0,0],[w,0],[w,d],[0,d]],closed:true,wall:0.2};return D}
 function exampleDoc(){
   const D=rectDoc('Exempel – porträtt helfigur',9,6.5);
@@ -717,13 +719,13 @@ function buildLib(){
 }
 $('#libSearch').addEventListener('input',buildLib);
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.tile');if(!b)return;addItem(b.dataset.type,view.cx,view.cy)});
-$('#libList').addEventListener('dragstart',e=>{const b=e.target.closest('.tile');if(!b)return;e.dataTransfer.setData('text/plain','setplan:'+b.dataset.type);e.dataTransfer.effectAllowed='copy'});
+$('#libList').addEventListener('dragstart',e=>{const b=e.target.closest('.tile');if(!b)return;e.dataTransfer.setData('text/plain','floorplan:'+b.dataset.type);e.dataTransfer.effectAllowed='copy'});
 const stage=$('#stage');
 stage.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy'});
 stage.addEventListener('drop',e=>{e.preventDefault();
   const f=e.dataTransfer.files&&e.dataTransfer.files[0];
   if(f){f.text().then(t=>loadProject(t,{name:f.name,path:null})).catch(()=>toast('Filen gick inte att läsa.'));return}
-  const d=e.dataTransfer.getData('text/plain')||'';if(!d.startsWith('setplan:'))return;const p=toW(e);addItem(d.slice(8),p.x,p.y)});
+  const d=e.dataTransfer.getData('text/plain')||'';if(!d.startsWith('floorplan:'))return;const p=toW(e);addItem(d.slice(10),p.x,p.y)});
 function addItem(type,x,y){
   if(!T[type]) return;
   const it=mkItem(type,S(snap(x)),S(snap(y)));
@@ -1016,15 +1018,15 @@ let toastT=0;
 function toast(msg,sticky){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);if(!sticky)toastT=setTimeout(()=>{t.hidden=true},3600)}
 
 /* ---------- files ---------- */
-const slug=s=>(String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setplan');
+const slug=s=>(String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'floorplan');
 // The drawing is always kept on this device (localStorage). In the Mac app it can also be tied to a
-// .setplan file, which is then written automatically after every change – no manual saving needed.
+// .floorplan file, which is then written automatically after every change – no manual saving needed.
 let file=null; // {path,name}; path is null on the web (iPhone/iPad/browser)
 try{file=JSON.parse(localStorage.getItem(FILEKEY)||'null')}catch(e){file=null}
 let saveTimer=0,savedText=null,saving=null,saveErr=null;
 const projectText=()=>JSON.stringify(doc,null,1);
 const autoFile=()=>H.kind==='app'&&file&&file.path;
-const stem=n=>String(n||'').replace(/\.setplan(\.json)?$|\.json$/i,'');
+const stem=n=>String(n||'').replace(/\.(floorplan|setplan)(\.json)?$|\.json$/i,'');
 function setFile(f,text){
   file=f; savedText=text??null; saveErr=null;
   try{f?localStorage.setItem(FILEKEY,JSON.stringify(f)):localStorage.removeItem(FILEKEY)}catch(e){}
@@ -1058,12 +1060,12 @@ function updateSaveState(st){
   el.textContent=t; el.dataset.st=k; el.title=file&&file.path?file.path:'';
   el.hidden=!t;
   const name=file&&file.name?stem(file.name):(doc.meta.title||'Namnlös ritning');
-  H.setTitle(name+' – Setplan');
+  H.setTitle(name+' – Floorplan');
 }
 function fileHelp(){
   if(H.kind==='app') return file&&file.path
     ?`Ritningen sparas automatiskt i <b>${esc(file.name)}</b> efter varje ändring.`
-    :'Spara ritningen som en fil, så sparas den sedan automatiskt efter varje ändring. Dubbelklicka på filen i Finder för att öppna den igen. Filen kan också öppnas i Setplan på iPhone och iPad.';
+    :'Spara ritningen som en fil, så sparas den sedan automatiskt efter varje ändring. Dubbelklicka på filen i Finder för att öppna den igen. Filen kan också öppnas i Floorplan på iPhone och iPad.';
   return 'Ritningen sparas automatiskt på den här enheten. Spara en projektfil för att ha flera projekt eller flytta ritningen till en annan enhet eller till Mac-appen.'+(H.touch?' Välj <b>Spara i Filer</b> i menyn som kommer upp.':'');
 }
 async function save(){
@@ -1072,7 +1074,7 @@ async function save(){
 }
 async function saveAs(){
   if(doc.meta.example){doc.meta.example=false;record();showBanner()}
-  const name=(file&&file.name?stem(file.name):slug(doc.meta.title))+'.setplan',text=projectText();
+  const name=(file&&file.name?stem(file.name):slug(doc.meta.title))+'.floorplan',text=projectText();
   try{
     const r=await H.saveProjectAs(name,text);
     if(!r){$('#toast').hidden=true;return}
@@ -1097,7 +1099,7 @@ async function openPath(path){
   loadProject(text,{path,name:H.baseName(path)});
 }
 function loadProject(text,f){
-  let d; try{d=normalize(JSON.parse(text))}catch(e){toast('Filen gick inte att läsa. Välj en ritning som sparats från Setplan.');return false}
+  let d; try{d=normalize(JSON.parse(text))}catch(e){toast('Filen gick inte att läsa. Välj en ritning som sparats från Floorplan.');return false}
   doc=d; sel=null; wd=null;
   undoS=[]; redoS=[]; cur=JSON.stringify(doc);
   try{localStorage.setItem(KEY,cur)}catch(e){}
@@ -1225,7 +1227,7 @@ H.onBeforeQuit(flushSave);
     else setFile(file,text);
   }
   // Finder double-click / Open With
-  await H.onOpenFiles(paths=>{const p=paths.find(x=>/\.(setplan|json)$/i.test(x));if(p)openPath(p).catch(e=>{console.error(e);toast('Filen gick inte att öppna.')})});
+  await H.onOpenFiles(paths=>{const p=paths.find(x=>/\.(floorplan|setplan|json)$/i.test(x));if(p)openPath(p).catch(e=>{console.error(e);toast('Filen gick inte att öppna.')})});
   const dir=await H.selftest(); if(dir) runSelftest(dir);
 })().catch(e=>console.error(e));
 
@@ -1233,7 +1235,7 @@ H.onBeforeQuit(flushSave);
 if(H.kind==='web'&&'serviceWorker' in navigator&&(location.protocol==='https:'||/[?&]sw\b/.test(location.search))){
   navigator.serviceWorker.register('sw.js').then(reg=>{
     reg.addEventListener('updatefound',()=>{const w=reg.installing;if(!w)return;w.addEventListener('statechange',()=>{
-      if(w.state==='installed'&&navigator.serviceWorker.controller) toast('En ny version av Setplan finns. Den används nästa gång du öppnar appen.')})});
+      if(w.state==='installed'&&navigator.serviceWorker.controller) toast('En ny version av Floorplan finns. Den används nästa gång du öppnar appen.')})});
   }).catch(e=>console.warn('service worker',e));
 }
 
@@ -1242,13 +1244,13 @@ async function runSelftest(dir){
   const res={ok:false,steps:[]};
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   try{
-    await openPath(dir+'/test.setplan');
-    if(!autoFile()||file.path!==dir+'/test.setplan') throw new Error('file not opened');
+    await openPath(dir+'/test.floorplan');
+    if(!autoFile()||file.path!==dir+'/test.floorplan') throw new Error('file not opened');
     res.steps.push('opened');
     const n=doc.items.length;
     addItem('softbox',3,3);
     await wait(1500); await flushSave();
-    const back=JSON.parse(await H.readProject(dir+'/test.setplan'));
+    const back=JSON.parse(await H.readProject(dir+'/test.floorplan'));
     if(back.items.length!==n+1) throw new Error('autosave did not write the new item');
     res.steps.push('autosaved');
     await exportPDF(); res.steps.push('pdf');

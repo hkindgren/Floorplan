@@ -72,13 +72,13 @@ test('save and open a project file, export PDF and PNG (computer browser: downlo
   await page.fill('#titleIn', 'Porträtt');
   await page.press('#titleIn', 'Tab');
   let [dl] = await Promise.all([page.waitForEvent('download'), page.click('#saveB')]);
-  assert.equal(dl.suggestedFilename(), 'portratt.setplan');
+  assert.equal(dl.suggestedFilename(), 'portratt.floorplan');
   const saved = JSON.parse(await readDownload(dl));
-  assert.equal(saved.app, 'setplan');
+  assert.equal(saved.app, 'floorplan');
   assert.equal(saved.items.length, 11);
 
   // open it again in a fresh drawing
-  const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'setplan-')), 'portratt.setplan');
+  const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'floorplan-')), 'portratt.floorplan');
   saved.meta.title = 'Från fil';
   saved.items.pop();
   fs.writeFileSync(tmp, JSON.stringify(saved));
@@ -106,7 +106,7 @@ test('Cmd/Ctrl+S saves and Cmd/Ctrl+O opens', async () => {
   const { ctx, page } = await open();
   const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
   const [dl] = await Promise.all([page.waitForEvent('download'), page.keyboard.press(mod + '+s')]);
-  assert.match(dl.suggestedFilename(), /\.setplan$/);
+  assert.match(dl.suggestedFilename(), /\.floorplan$/);
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.keyboard.press(mod + '+o')]);
   assert.ok(chooser);
   await ctx.close();
@@ -143,7 +143,7 @@ test('iPhone: tap to add, share sheet for project and PDF, layout fits', async (
   await page.tap('#pdfB');
   await page.waitForFunction(() => window.__shared.length === 2, null, { timeout: 30000 });
   const shared = await page.evaluate(() => window.__shared);
-  assert.match(shared[0].name, /\.setplan$/);
+  assert.match(shared[0].name, /\.floorplan$/);
   assert.equal(shared[1].name.endsWith('.pdf'), true);
   assert.ok(shared[1].size > 20000);
   assert.deepEqual(errors, []);
