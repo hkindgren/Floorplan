@@ -98,13 +98,16 @@ jobs:
         run: npm run build:mac
       - name: Check the bundle
         run: |
-          APP=$(ls -d src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app)
-          plutil -p "$APP/Contents/Info.plist" | tee info.txt
-          grep -q CFBundleDocumentTypes info.txt
-          grep -q net.kindgren.floorplan.drawing info.txt
-          ARCHS=$(lipo -archs "$APP/Contents/MacOS/floorplan")
-          echo "::notice title=Bundle::archs: $ARCHS | $(du -sh "$APP" | cut -f1)"
-          codesign --verify --deep --strict "$APP" && echo "::notice title=Codesign::verify ok"
+          APP=$(ls -d src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app | head -1)
+          plutil -p "$APP/Contents/Info.plist" > info.txt; cat info.txt
+          fail() { echo "::error title=Bundle check::$1"; exit 1; }
+          grep -q CFBundleDocumentTypes info.txt || fail "no document types in Info.plist"
+          grep -q net.kindgren.floorplan.drawing info.txt || fail "the .floorplan file type is not declared"
+          EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP/Contents/Info.plist")
+          ARCHS=$(lipo -archs "$APP/Contents/MacOS/$EXE") || fail "no executable $EXE"
+          echo "::notice title=Bundle::$(basename "$APP") · $EXE · archs: $ARCHS · $(du -sh "$APP" | cut -f1)"
+          codesign --verify --deep --strict "$APP" || fail "codesign verify failed"
+          echo "::notice title=Codesign::verify ok"
       - name: Stable file name
         run: |
           mkdir -p dist
