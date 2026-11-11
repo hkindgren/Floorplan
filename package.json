@@ -1,7 +1,7 @@
 {
   "name": "floorplan",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Floorplan – planritningar för foto- och filminspelningar. Mac-app (Tauri) och webbapp för iPhone/iPad.",
   "type": "module",
   "scripts": {

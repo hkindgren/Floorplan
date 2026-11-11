@@ -196,3 +196,93 @@ test('installable web app: manifest, icons, works offline after the first visit'
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+// Outdoors: place, map, buildings and sun. The network (OpenStreetMap) is replaced by fixed answers.
+const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+const LAT = 59.3143, LON = 18.0716, mN = 1 / 111319.49, mE = mN / Math.cos(LAT * Math.PI / 180);
+// a 6 m high house, 12 x 12 m, 8–20 m south of the place
+const BLOCK = [[-8, -6], [-8, 6], [-20, 6], [-20, -6], [-8, -6]].map(([n, e]) => ({ lat: LAT + n * mN, lon: LON + e * mE }));
+async function fakeNetwork(ctx) {
+  const cors = { 'access-control-allow-origin': '*' };
+  await ctx.route(/tile\.openstreetmap\.org|arcgisonline\.com/, r => r.fulfill({ status: 200, contentType: 'image/png', headers: cors, body: PNG1 }));
+  await ctx.route(/nominatim\.openstreetmap\.org\/search/, r => r.fulfill({ status: 200, contentType: 'application/json', headers: cors,
+    body: JSON.stringify([{ lat: String(LAT), lon: String(LON), display_name: 'Medborgarplatsen, Södermalm, Stockholm' }]) }));
+  await ctx.route(/nominatim\.openstreetmap\.org\/reverse/, r => r.fulfill({ status: 200, contentType: 'application/json', headers: cors,
+    body: JSON.stringify({ display_name: 'Medborgarplatsen, Södermalm, Stockholm' }) }));
+  await ctx.route(/\/api\/interpreter/, r => r.fulfill({ status: 200, contentType: 'application/json', headers: cors,
+    body: JSON.stringify({ elements: [{ type: 'way', id: 1, tags: { building: 'house', height: '6' }, geometry: BLOCK }] }) }));
+}
+const setVal = (page, sel, v) => page.$eval(sel, (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, v);
+
+test('outdoors: find the place, map and buildings, sun and shadows by time of day, PDF', async () => {
+  const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1440, height: 900 } });
+  await fakeNetwork(ctx);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(base);
+  await page.waitForSelector('#cv [data-id]');
+  await page.click('#newB');
+  await page.fill('#nTitle', 'Torget');
+  await page.click('#nOut');
+  assert.equal(await page.getAttribute('[data-tab="sun"]', 'aria-selected'), 'true', 'opens on the Sol tab');
+  await page.fill('#geoQ', 'Medborgarplatsen');
+  await page.press('#geoQ', 'Enter');
+  await page.click('.gres');
+  await page.waitForSelector('#cv [data-bld]');
+  assert.equal(await page.locator('#cv [data-bld]').count(), 1, 'the building from OpenStreetMap');
+  assert.ok(await page.locator('#mapcv image').count() > 0, 'map tiles under the drawing');
+  assert.equal(await page.isVisible('#sunbar'), true);
+  assert.match(await page.textContent('#pane'), /Medborgarplatsen/);
+
+  // midsummer noon: high sun from the south, the building's shadow stops short of the model
+  await setVal(page, '#pane [data-o="meta"][data-k="date"]', '2026-06-21');
+  await setVal(page, '#sunT', '720');
+  const info = await page.textContent('#sunInfo');
+  const alt = parseInt(info, 10);
+  assert.ok(alt >= 51 && alt <= 54, 'sun height at noon in Stockholm in June: ' + info);
+  assert.match(info, /S/);
+  await page.click('.tile[data-type="model"]');
+  assert.equal(await page.textContent('#itShade'), 'I sol.');
+  assert.equal(await page.locator('#cv .shd').count(), 1, 'shadows are drawn');
+  // December noon: the sun is low and the building shades the model
+  await page.click('[data-tab="sun"]');
+  await setVal(page, '#pane [data-o="meta"][data-k="date"]', '2026-12-15');
+  assert.match(await page.textContent('#shadeList'), /I skugga av en byggnad/);
+  // the evening of the same day: the sun has set
+  await setVal(page, '#sunT', '1200');
+  assert.equal(await page.textContent('#sunInfo'), 'Solen är nere');
+
+  // kept on the device
+  await page.reload();
+  await page.waitForSelector('#cv [data-bld]');
+  assert.equal(await page.isVisible('#sunbar'), true);
+
+  await setVal(page, '#sunT', '720');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), page.click('#pdfB')]);
+  const pdf = await readDownload(dl);
+  assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+  assert.ok(pdf.length > 20000);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('outdoors: coordinates pasted from a map app, turning the map', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await fakeNetwork(ctx);
+  const page = await ctx.newPage();
+  await page.goto(base);
+  await page.waitForSelector('#cv [data-id]');
+  await page.click('[data-tab="sun"]');
+  await page.fill('#geoQ', '59.3143, 18.0716');
+  await page.press('#geoQ', 'Enter');
+  await page.waitForSelector('#cv [data-bld]');
+  assert.match(await page.textContent('.loc'), /59\.31430, 18\.07160/);
+  assert.equal(await items(page), 11, 'the drawing stays as it was');
+  await page.click('[data-act="rotn"][data-d="5"]');
+  assert.equal(await page.inputValue('#pane [data-o="geo"][data-k="rot"]'), '5');
+  await page.click('[data-act="geodel"]');
+  assert.equal(await page.isVisible('#sunbar'), false);
+  await ctx.close();
+});
