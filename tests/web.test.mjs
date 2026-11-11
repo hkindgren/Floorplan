@@ -237,6 +237,7 @@ test('outdoors: find the place, map and buildings, sun and shadows by time of da
   assert.match(await page.textContent('#pane'), /Medborgarplatsen/);
 
   // midsummer noon: high sun from the south, the building's shadow stops short of the model
+  await setVal(page, '#pane [data-o="geo"][data-k="tz"]', 'Europe/Stockholm');
   await setVal(page, '#pane [data-o="meta"][data-k="date"]', '2026-06-21');
   await setVal(page, '#sunT', '720');
   const info = await page.textContent('#sunInfo');

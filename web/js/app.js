@@ -1379,7 +1379,7 @@ $('#zoomOut').addEventListener('click',()=>zoomBy(0.8));
 $('#fitB').addEventListener('click',fit);
 $('#pdfB').addEventListener('click',exportPDF);
 // the time-of-day bar over the drawing (outdoor plans)
-$('#sunT').addEventListener('input',e=>{if(!doc.geo)return;doc.geo.time=clamp(+e.target.value,0,1439);render()});
+$('#sunT').addEventListener('input',e=>{if(!doc.geo)return;doc.geo.time=clamp(+e.target.value,0,1439);updateSunUI();render()});
 $('#sunT').addEventListener('change',()=>{if(doc.geo)record()});
 
 let toastT=0;
