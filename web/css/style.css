@@ -6,6 +6,8 @@
   --cam:#2346B5; --cam-f:#E5EAFA; --light:#B36800; --light-f:#FBEED8; --grip:#4A5560; --grip-f:#E7EAED;
   --person:#16766A; --person-f:#DBF0EB; --prop:#6B5847; --prop-f:#F1EAE3; --veh:#7B3551; --veh-f:#F4E2E9;
   --arch:#1B2226; --note:#C22B2B; --note-f:#FBE2E2; --cone-cam:#2346B5; --cone-light:#E0951A;
+  --bld:#3A444B; --bld-f:#C5CCD0; --shadow:#1E2A33; --sun:#E08A00;
+  --night:#2A3442; --twi:#8C7BA8; --gold:#F2A93B; --day:#F6DE8A;
   --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -16,14 +18,14 @@
   --accent:#7895FF; --accent-ink:#0B1020; --sel:#3BB4FF;
   --cam:#8AA3FF; --cam-f:#1F2944; --light:#F2A83C; --light-f:#3A2B14; --grip:#A8B3BD; --grip-f:#283037;
   --person:#55C8B4; --person-f:#163430; --prop:#CBB59E; --prop-f:#30291F; --veh:#E68BB0; --veh-f:#3A1F2B;
-  --arch:#D7DEDB; --note:#FF6E6E; --note-f:#3B1C1C; --cone-cam:#8AA3FF; --cone-light:#F2A83C; color-scheme:dark}}
+  --arch:#D7DEDB; --note:#FF6E6E; --note-f:#3B1C1C; --cone-cam:#8AA3FF; --cone-light:#F2A83C; --bld:#B9C3C8; --bld-f:#3A454C; --shadow:#000000; --sun:#FFB23E; --night:#0B1018; --twi:#5E4F7A; --gold:#D98F24; --day:#C9AE52; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#13171A; --panel:#1A2024; --sheet:#0F1316; --floor:#1C2327; --ink:#E3E8E6; --muted:#97A1A6; --line:#323B40; --line2:#283035;
   --grid:#232B30; --grid2:#333D43; --wall:#D7DEDB; --paperroll:#2A3236;
   --accent:#7895FF; --accent-ink:#0B1020; --sel:#3BB4FF;
   --cam:#8AA3FF; --cam-f:#1F2944; --light:#F2A83C; --light-f:#3A2B14; --grip:#A8B3BD; --grip-f:#283037;
   --person:#55C8B4; --person-f:#163430; --prop:#CBB59E; --prop-f:#30291F; --veh:#E68BB0; --veh-f:#3A1F2B;
-  --arch:#D7DEDB; --note:#FF6E6E; --note-f:#3B1C1C; --cone-cam:#8AA3FF; --cone-light:#F2A83C; color-scheme:dark}
+  --arch:#D7DEDB; --note:#FF6E6E; --note-f:#3B1C1C; --cone-cam:#8AA3FF; --cone-light:#F2A83C; --bld:#B9C3C8; --bld-f:#3A454C; --shadow:#000000; --sun:#FFB23E; --night:#0B1018; --twi:#5E4F7A; --gold:#D98F24; --day:#C9AE52; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -139,7 +141,10 @@ input[type=range]{width:100%;accent-color:var(--cs,var(--accent));margin:2px 0 6
 .lyr .in:focus-within{border-color:var(--sel)}
 .lyr input{padding:4px 4px;font-size:12.5px}
 .lyr .dot{width:8px;height:8px;border-radius:2px;background:var(--cs,var(--muted))}
-.lyr.cones .dot{background:var(--cone-light)}
+.lyr.spec-cones .dot{background:var(--cone-light)}
+.lyr.spec-map .dot{background:var(--grid2)}
+.lyr.spec-shadow .dot{background:var(--shadow)}
+.lyr.spec-bld .dot{background:var(--bld)}
 .lyr .cnt{font:500 11px/1 var(--f-mono);color:var(--muted);text-align:right}
 .lyr.off{background:transparent}
 .lyr.off input{color:var(--muted);text-decoration:line-through}
@@ -211,3 +216,45 @@ input[type=range]{width:100%;accent-color:var(--cs,var(--accent));margin:2px 0 6
   .title-in{flex-basis:100%;max-width:none;order:-1}
   .brand{display:none}
 }
+
+/* ---------- outdoors: map, sun, shadows ---------- */
+#mapcv{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#cv.t-mapmove{cursor:grab}
+#cv .bldg{cursor:pointer}
+#cv .bldt,#cv .shd,#cv .sunm,#cv .attrt{pointer-events:none}
+.sunbar{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:min(560px,calc(100% - 24px));display:flex;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;box-shadow:0 2px 10px rgb(0 0 0 / .08)}
+.sunbar .sunic{width:18px;height:18px;flex:none;fill:var(--sun);stroke:var(--sun);stroke-width:1.6;stroke-linecap:round}
+.sunbar b{font:600 15px/1 var(--f-mono);font-variant-numeric:tabular-nums;min-width:46px}
+.sunbar span{font:500 11.5px/1 var(--f-mono);color:var(--muted);white-space:nowrap;min-width:64px}
+#sunT{flex:1;min-width:0;margin:0;-webkit-appearance:none;appearance:none;height:22px;background:transparent;--track:var(--day)}
+#sunT::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:var(--track);border:1px solid var(--line)}
+#sunT::-moz-range-track{height:8px;border-radius:4px;background:var(--track);border:1px solid var(--line)}
+#sunT::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-5px;border-radius:50%;background:var(--floor);border:2px solid var(--ink)}
+#sunT::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--floor);border:2px solid var(--ink)}
+.banner:not([hidden])~.sunbar{top:64px}
+.north{display:flex;flex-direction:column;align-items:center;gap:1px;font:600 10px/1 var(--f-cond);color:var(--ink)}
+.north svg{width:20px;height:20px;fill:var(--ink)}
+.attr{font:400 10px/1.2 var(--f-cond);color:var(--muted);max-width:260px}
+.srch{display:flex;gap:6px;align-items:stretch}
+.srch .in{flex:1}
+.gres-list{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.gres{text-align:left;border:1px solid var(--line);background:var(--floor);border-radius:4px;padding:7px 9px;font-size:12.5px;line-height:1.35}
+.gres:hover{border-color:var(--muted)}
+.loc{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.loc b{font-weight:600;line-height:1.3}
+.loc span{font:12px/1 var(--f-mono);color:var(--muted)}
+details.more summary{cursor:pointer;font:500 12px/1 var(--f-cond);color:var(--accent);margin:4px 0 8px}
+.sunchips{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0 10px}
+.sunchips button{display:flex;justify-content:space-between;gap:6px;border:1px solid var(--line);background:var(--floor);border-radius:4px;padding:6px 8px;font:500 11.5px/1.2 var(--f-cond);text-align:left}
+.sunchips button b{font:500 11.5px/1.2 var(--f-mono)}
+.sunchips button:hover{border-color:var(--muted)}
+.sunchips p{grid-column:1/-1}
+.warn{color:var(--note);font-size:12.5px;margin:0 0 10px}
+.shade-list{display:flex;flex-direction:column;gap:3px}
+.shade-list div{display:flex;justify-content:space-between;gap:10px;padding:5px 8px;border-radius:4px;background:var(--line2);font-size:12.5px}
+.shade-list div span:last-child{color:var(--muted);text-align:right}
+.shade-list .is-sun{background:color-mix(in srgb,var(--sun) 18%,var(--floor))}
+.shade-list .is-shade{background:color-mix(in srgb,var(--shadow) 14%,var(--floor))}
+.acts.tight{margin-top:18px;gap:4px}
+@media (max-width:900px){.sunbar{top:8px;gap:8px;padding:5px 10px}.sunbar span{display:none}}

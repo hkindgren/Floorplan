@@ -77,7 +77,7 @@ jobs:
   mac:
     name: Build macOS app (Apple Silicon + Intel)
     needs: test
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
